@@ -47,6 +47,25 @@ exports.debug = function () {
             trace('update', annotation);
             return annotation;
         },
+        
+        comment: function(annotation) {
+            var reply = {comment: "", user: ""};
+            reply['comment'] = annotation.reply;
+            reply['user'] = "";
+
+            var comments = []
+            if (typeof annotation.comments === 'undefined') {
+                comments.push(reply);
+            }
+            else {
+                comments = annotation.comments;
+                comments.push(reply);
+            }
+            annotation.comments = comments;
+            
+            trace('comment', annotation);
+            return annotation;
+        },
 
         'delete': function (annotation) {
             trace('destroy', annotation);
@@ -87,6 +106,23 @@ exports.noop = function () {
         },
 
         update: function (annotation) {
+            return annotation;
+        },
+
+        comment: function (annotation) {
+            var reply = {comment: "", user: ""};
+            reply['comment'] = annotation.reply;
+            reply['user'] = "";
+
+            var comments = []
+            if (typeof annotation.comments === 'undefined') {
+                comments.push(reply);
+            }
+            else {
+                comments = annotation.comments;
+                comments.push(reply);
+            }
+            annotation.comments = comments;
             return annotation;
         },
 
@@ -199,6 +235,21 @@ HttpStorage.prototype.update = function (annotation) {
 };
 
 /**
+* function:: HttpStorage.prototype.comment(annotation)
+*
+* Reply to annotation
+*
+*
+* :param Object annotation: An annotation. Must contain an `id`.
+* :returns: the request object.
+* :rtype: Promise
+*/
+HttpStorage.prototype.comment = function (annotation) {
+    return this._apiRequest('comment', annotation);
+};
+
+
+/**
  * function:: HttpStorage.prototype.delete(annotation)
  *
  * Delete an annotation.
@@ -228,9 +279,10 @@ HttpStorage.prototype['delete'] = function (annotation) {
  */
 HttpStorage.prototype.query = function (queryObj) {
     return this._apiRequest('search', queryObj)
-    .then(function (obj) {
-        var rows = obj.rows;
-        delete obj.rows;
+        .then(function (obj) {
+            //var rows = obj.rows;
+            var rows = obj;
+            //delete obj.rows;
         return {results: rows, meta: obj};
     });
 };
@@ -311,6 +363,20 @@ HttpStorage.prototype._apiRequestOptions = function (action, obj) {
     }
 
     var data = obj && JSON.stringify(obj);
+    
+    // if appendAppData
+    if (this.options.appendAppData) {
+
+        var d = JSON.parse(data);
+        d.user = this.options.appData.user;
+        d.user_id = this.options.appData.user_id;
+        d.basket_id = this.options.appData.basket_id;
+        d.product_id = this.options.appData.product_id;
+        d.permissions = this.options.appData.permissions;
+        data = JSON.stringify(d);
+        var d2 = JSON.stringify(this.options.appData);
+
+    }
 
     // If emulateJSON is enabled, we send a form request (the correct
     // contentType will be set automatically by jQuery), and put the
@@ -352,6 +418,10 @@ HttpStorage.prototype._urlFor = function (action, id) {
     url += this.options.urls[action];
     // If there's an '{id}' in the URL, then fill in the ID.
     url = url.replace(/\{id\}/, id);
+    if (action == 'search') {
+        url = url + "?user_id="+this.options.appData.user_id + "&product_id="+this.options.appData.product_id + "&basket_id="+this.options.appData.basket_id;
+    }
+
     return url;
 };
 
@@ -365,6 +435,7 @@ HttpStorage.prototype._methodFor = function (action) {
     var table = {
         create: 'POST',
         update: 'PUT',
+        comment: 'POST',
         destroy: 'DELETE',
         search: 'GET'
     };
@@ -463,6 +534,26 @@ HttpStorage.options = {
      */
     prefix: '/store',
 
+
+    /** 
+     * 
+     *
+     */         
+    appendAppData: true,
+
+
+    /** 
+     * 
+     *
+     */         
+    appData: {
+        user: "",
+        user_id: "",
+        basket_id: "",
+        product_id: "",
+        permissions: {"read": [], "admin": [], "update": [], "delete": []}
+    },
+
     /**
      * attribute:: HttpStorage.options.urls
      *
@@ -484,6 +575,7 @@ HttpStorage.options = {
     urls: {
         create: '/annotations',
         update: '/annotations/{id}',
+        comment: '/annotations/{id}',
         destroy: '/annotations/{id}',
         search: '/search'
     }
@@ -575,6 +667,25 @@ StorageAdapter.prototype.update = function (obj) {
         obj,
         'update',
         'beforeAnnotationUpdated',
+        'annotationUpdated'
+    );
+};
+
+/** funtion:: StorageAdapter.prototype.comment(obj)
+*  Adds new comment on the annotation
+*
+* :param Object annotation: An annotation object to comment on.
+* :returns Promise: Resolves to annotation object when replied
+*/
+
+StorageAdapter.prototype.comment = function(obj) {
+    if (typeof obj.id === 'undefined' || obj.id === null) {
+        console.debug("error commenting... ");
+    }
+    return this._cycle(
+        obj,
+        'comment',
+        'beforeAnnotationReplied',
         'annotationUpdated'
     );
 };

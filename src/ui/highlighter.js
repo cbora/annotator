@@ -96,7 +96,6 @@ Highlighter.prototype.drawAll = function (annotations) {
             if (typeof annList === 'undefined' || annList === null) {
                 annList = [];
             }
-
             var now = annList.splice(0, self.options.chunkSize);
             for (var i = 0, len = now.length; i < len; i++) {
                 highlights = highlights.concat(self.draw(now[i]));
@@ -111,11 +110,14 @@ Highlighter.prototype.drawAll = function (annotations) {
                 resolve(highlights);
             }
         }
+        var clone = Array();
 
-        var clone = annotations.slice();
+        for (var i=0; i<annotations.length; i++){
+            clone.push(annotations[i]);
+        }
+
         loader(clone);
     });
-
     return p;
 };
 
@@ -219,6 +221,7 @@ exports.standalone = function standalone(element, options) {
         annotationsLoaded: function (anns) { widget.drawAll(anns); },
         annotationCreated: function (ann) { widget.draw(ann); },
         annotationDeleted: function (ann) { widget.undraw(ann); },
-        annotationUpdated: function (ann) { widget.redraw(ann); }
+        annotationUpdated: function (ann) { widget.redraw(ann); },
+        annotationReplied: function (ann) { widget.redraw(ann); }
     };
 };

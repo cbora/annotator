@@ -18,7 +18,8 @@
 	-webkit-box-shadow: none;
 	-o-box-shadow: none;
 	box-shadow: none;
-	color: rgb(144, 144, 144);
+	/*color: rgb(144, 144, 144);*/
+        color: red;
 }
 
 /* Images
@@ -136,8 +137,9 @@
 	min-width: 265px;
 	background-color: #FBFBFB;
 	background-color: rgba(251, 251, 251, 0.98);
-	border: 1px solid #7A7A7A;
-	border: 1px solid rgba(122, 122, 122, 0.6);
+	/**border: 1px solid #7A7A7A; **/
+	/***border: 1px solid rgba(122, 122, 122, 0.6); **/
+        border: 2px solid #FF0000;
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
 	border-radius: 5px;
@@ -208,10 +210,39 @@
 
 .annotator-editor .annotator-item,
 .annotator-viewer div {
-	border-top: 1px solid #858585;
-	border-top: 1px solid rgba(133, 133, 133, 0.11);
+    /**border-top: 1px solid #858585;
+	border-top: 1px solid rgba(133, 133, 133, 0.11); **/
 }
 
+.comment-user {
+    color: #ff5959;
+    /**color: #d43f3a; **/
+    color: red;
+    font-weight: 900;
+    font-size: 14px;
+    font-style: normal;
+    font-family: Avenir, sans serif;
+}
+
+.main-comment-text {
+    font-style: normal;
+    font-weight: 700;
+    color: #000000;
+}
+
+.reply-user {
+    color: #ff5959;
+    font-weight: 700;
+    font-size: 11px;
+    font-style: italic;
+    font-family: Avenir, sans serif;
+}
+
+.reply-text {
+    font-style: italic;
+    font-weight: 500;
+    color: #000000;
+}
 /* Annotator Viewer
 -------------------------------------------------------------------- */
 
@@ -297,6 +328,18 @@
 .annotator-viewer .annotator-controls .annotator-link {
 	background-position: 0 -270px;
 }
+
+.annotator-viewer .annotator-reply-controls {    
+    position: absolute;
+    padding-top: 10px;
+    bottom: 2px;
+    left: 5px;
+}
+
+.annotator-space {
+    padding-bottom: 10px;
+}
+
 
 /* Annotator Editor
 -------------------------------------------------------------------- */

@@ -459,6 +459,7 @@ exports.standalone = function (options) {
         annotationsLoaded: function () { widget.updateHighlights(); },
         annotationCreated: function () { widget.updateHighlights(); },
         annotationUpdated: function () { widget.updateHighlights(); },
-        annotationDeleted: function () { widget.updateHighlights(); }
+        annotationDeleted: function () { widget.updateHighlights(); },
+        annotationReplied: function () { widget.updateHighlights(); }
     };
 };

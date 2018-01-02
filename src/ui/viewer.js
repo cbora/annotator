@@ -83,8 +83,9 @@ var Viewer = exports.Viewer = Widget.extend({
         this.hideTimerActivity = null;
         this.mouseDown = false;
         this.render = function (annotation) {
-            if (annotation.text) {
-                return util.escapeHtml(annotation.text);
+            if (annotation.text) {                
+                var t1 = util.escapeHtml(annotation.text);
+                return t1;
             } else {
                 return "<i>" + _t('No comment') + "</i>";
             }
@@ -95,10 +96,52 @@ var Viewer = exports.Viewer = Widget.extend({
         if (this.options.defaultFields) {
             this.addField({
                 load: function (field, annotation) {
-                    $(field).html(self.render(annotation));
+                    var text = "";
+                    if (annotation.user != null) {
+                        var user = "<span class='comment-user'>" + annotation.user + "</span>";
+                        text = text + user + "&nbsp;&nbsp;";
+                    }
+                    text = text + "<span class='main-comment-text'>" +self.render(annotation) +"</span>";
+                    $(field).html(text);
                 }
             });
+
+            this.addField({
+                load: function (field, annotation) {                    
+                    var all_comments = "";                    
+                    if (typeof annotation.reply !== 'undefined') {                        
+                        for (var i=0; i < annotation.reply.length; i++) {
+                            var t1 = "<span class='reply-text'>";
+                            var user = "unknown";
+                            if (annotation.reply[i].user != ""){
+                                user = annotation.reply[i].user;
+                            }
+                            t1 = t1 + annotation.reply[i].comment;
+                            user = "<span class='reply-user' style='display:inline;'>" + user + "</span>";
+                            all_comments = all_comments +"<div>" + user +"&nbsp;&nbsp;"+ t1 +"</span> </div>";   
+                        }
+                    }                    
+                    $(field).html(all_comments);                        
+                }
+            });
+
+            this.addField({
+                load: function (field, annotation) {
+                    $(field).html(    '  <span class="annotator-reply-controls">' +
+                                      '    <input type="text"' +
+                                      '           title="' + _t('Reply') + '"' +
+                                      '           name="reply"' +
+                                      '           class="annotator-reply-box">' +
+                                      ' <button class="annotator-reply"> Reply </button>' +
+                                      ' <br>' +
+                                      '  </span>' +
+                                      ' <div></div>'
+                                 );
+                }
+                
+            });
         }
+
 
         if (typeof this.options.onEdit !== 'function') {
             throw new TypeError("onEdit callback must be a function");
@@ -112,6 +155,10 @@ var Viewer = exports.Viewer = Widget.extend({
         if (typeof this.options.permitDelete !== 'function') {
             throw new TypeError("permitDelete callback must be a function");
         }
+        if (typeof this.options.onReply !== 'function') {
+            throw new TypeError("onReply callback must be a function");
+        }
+        
 
         if (this.options.autoViewHighlights) {
             this.document = this.options.autoViewHighlights.ownerDocument;
@@ -141,12 +188,23 @@ var Viewer = exports.Viewer = Widget.extend({
                 });
         }
 
+        var s = this;
         this.element
             .on("click." + NS, '.annotator-edit', function (e) {
                 self._onEditClick(e);
             })
             .on("click." + NS, '.annotator-delete', function (e) {
                 self._onDeleteClick(e);
+            })
+            .on("click." + NS, '.annotator-reply', function (e) {
+                self._onReplyClick(e);
+            })
+            .on("keydown." + NS, '.annotator-reply-box', function (e) {
+                // Allow enter key to submit comment
+                if ( e.keyCode == 13 ){
+                    var r = $(this).nextAll('.annotator-reply').first();
+                    r.click();
+                }
             })
             .on("mouseenter." + NS, function () {
                 self._clearHideTimer();
@@ -347,6 +405,21 @@ var Viewer = exports.Viewer = Widget.extend({
         }
     },
 
+    // Event callback: called when the reply button is clicked.
+    //
+    // event - An Event Object
+    // Returns nothing
+    _onReplyClick: function (event) {
+        var item = $(event.target)
+            .parents('.annotator-annotation')
+            .data('annotation');
+        var tmp = $(event.target).prev();
+        item.reply = tmp.val();
+        this.hide();
+        this.options.onReply(item);
+    },
+    
+
     // Event callback: called when a user triggers `mouseover` on a highlight
     // element.
     //
@@ -468,11 +541,27 @@ Viewer.itemTemplate = [
     '</li>'
 ].join('\n');
 
+
+/**
+    '  <input type="submit" value="Reply">',
+    '  <p class="annotator-space"></p>',
+    '  <span class="annotator-reply-controls">',
+    '    <input type="text"',
+    '           title="' + _t('Reply') + '"',
+    '           name="reply"',
+    '           class="annotator-reply-box">',
+    '    <a href="#" class="annotator-reply"> Reply </a>',
+    '  </span>',
+***/
+
 // Configuration options
 Viewer.options = {
     // Add the default field(s) to the viewer.
     defaultFields: true,
 
+    // Add comments made by other users
+    threadedReplies: true,
+    
     // Time, in milliseconds, before the viewer is hidden when a user mouses off
     // the viewer.
     inactivityDelay: 500,
@@ -498,7 +587,10 @@ Viewer.options = {
 
     // Callback, called when the user clicks the delete button for an
     // annotation.
-    onDelete: function () {}
+    onDelete: function () {},
+
+    // Callback, called when the user clicks the reply button
+    onReply: function () {}
 };
 
 
@@ -530,6 +622,12 @@ exports.standalone = function standalone(options) {
                 };
             }
 
+            if (typeof options.onReply === 'undefined') {
+                options.onReply = function (annotation) {
+                    app.annotations.comment(annotation);
+                };
+            }
+            
             // Set default handlers that determine whether the edit and delete
             // buttons are shown in the viewer:
             if (typeof options.permitEdit === 'undefined') {

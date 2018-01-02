@@ -265,6 +265,9 @@ function main(options) {
             onDelete: function (ann) {
                 app.annotations['delete'](ann);
             },
+            onReply: function (ann) {
+                app.annotations.comment(ann);
+            },            
             permitEdit: function (ann) {
                 return authz.permits('update', ann, ident.who());
             },
@@ -295,6 +298,8 @@ function main(options) {
         annotationCreated: function (ann) { s.highlighter.draw(ann); },
         annotationDeleted: function (ann) { s.highlighter.undraw(ann); },
         annotationUpdated: function (ann) { s.highlighter.redraw(ann); },
+        //annotationReplied: function (ann) { s.highlighter.redraw(ann); },
+        annotationReplied: function (ann) { s.highlighter.redraw(ann); },
 
         beforeAnnotationCreated: function (annotation) {
             // Editor#load returns a promise that is resolved if editing
